@@ -1,761 +1,521 @@
+
 <!DOCTYPE html>
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kotak Pintar MediaPipe</title>
+<title>Makan Jawapan - Kata Kerja Tahun 1</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
 <style>
-:root {
-  --blue: #3157b7;
-  --green: #168454;
-  --red: #d94b59;
+*{box-sizing:border-box}
+body{
+ margin:0;text-align:center;font-family:Arial,sans-serif;color:#263454;
+ background:linear-gradient(135deg,#9beaff,#d9c8ff,#fff0a8)
 }
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  text-align: center;
-  color: #24345b;
-  background: linear-gradient(135deg, #eaf2ff, #f9eaff);
+header{padding:12px}
+h1{font-size:clamp(24px,4vw,38px);margin:5px}
+.stats{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.pill{background:white;padding:10px 15px;border-radius:25px;font-weight:bold}
+#question{
+ width:94%;max-width:850px;margin:12px auto;padding:15px;
+ background:white;border:4px solid white;border-radius:20px;
+ font-size:clamp(20px,3vw,29px);font-weight:bold
 }
-header { padding: 12px 8px 4px; }
-h1 { color: var(--blue); margin: 5px; font-size: clamp(25px, 4vw, 38px); }
-p { line-height: 1.5; }
-
-button {
-  border: 0;
-  border-radius: 12px;
-  padding: 11px 16px;
-  margin: 5px;
-  background: var(--blue);
-  color: white;
-  font-size: 15px;
-  font-weight: bold;
-  cursor: pointer;
+#game{
+ width:min(94vw,900px);height:min(58vh,480px);min-height:330px;
+ margin:auto;position:relative;overflow:hidden;border:5px solid white;
+ border-radius:25px;
+ background:linear-gradient(#8be7ff,#e0f9ff 68%,#91e17e 68%);
+ box-shadow:0 6px 15px #0002
 }
-button:disabled { opacity: .55; }
-.green { background: var(--green); }
-.grey { background: #596780; }
-.red { background: var(--red); }
-
-#status { min-height: 24px; margin: 9px; font-weight: bold; }
-#controls { padding: 0 8px; }
-
-#stage {
-  position: relative;
-  width: min(96vw, 1100px);
-  margin: 10px auto;
-  overflow: hidden;
-  border-radius: 18px;
-  background: white;
-  box-shadow: 0 6px 24px #24345b25;
-}
-#game { display: block; width: 100%; height: auto; }
-
-#cameraBox {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: clamp(105px, 22%, 220px);
-  aspect-ratio: 4 / 3;
-  z-index: 3;
-  overflow: hidden;
-  background: #172033;
-  border: 3px solid white;
-  border-radius: 13px;
-  box-shadow: 0 4px 15px #0005;
-}
-#camera {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scaleX(-1);
-}
-#cameraLabel {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 4px;
-  color: white;
-  background: #0009;
-  font-size: 11px;
-}
-
-#teacherLoginPanel, #editor {
-  display: none;
-  max-width: 850px;
-  margin: 18px auto;
-  padding: 18px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 18px #24345b18;
-  text-align: left;
-}
-#teacherLoginPanel.open, #editor.open { display: block; }
-#teacherLoginPanel { max-width: 420px; }
-#teacherLoginPanel input {
-  width: 100%;
-  padding: 12px;
-  margin: 8px 0;
-  border: 2px solid #ccd6ef;
-  border-radius: 10px;
-  font-size: 16px;
-}
-#questionData {
-  width: 100%;
-  min-height: 190px;
-  padding: 12px;
-  border: 2px solid #ccd6ef;
-  border-radius: 10px;
-  font: 15px/1.6 monospace;
-}
-.note { font-size: 13px; color: #596780; }
-#help { max-width: 760px; margin: 18px auto 28px; padding: 0 14px; }
-
-body.fullscreen header,
-body.fullscreen #help,
-body.fullscreen #teacherLoginPanel,
-body.fullscreen #editor {
-  display: none !important;
-}
-body.fullscreen #controls { padding-top: 4px; }
-body.fullscreen #status { margin: 4px; min-height: 20px; }
-body.fullscreen #stage {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-body.fullscreen #game { width: 100%; }
-
-@media(max-width: 550px) {
-  button { padding: 10px 11px; font-size: 13px; }
-  #cameraBox { top: 6px; right: 6px; }
+#ground{position:absolute;bottom:0;height:25%;width:100%;
+ background:repeating-linear-gradient(90deg,#77d86c 0 40px,#94e986 40px 80px)}
+#monster{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);
+ font-size:clamp(65px,10vw,105px);z-index:3;pointer-events:none}
+#mouth{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+ width:82px;height:64px;border:4px dashed #ff477e;border-radius:50%;
+ background:#ffcfdd88;z-index:2;pointer-events:none}
+#mouthLabel{position:absolute;left:50%;top:61%;transform:translate(-50%,-50%);
+ background:white;border-radius:15px;padding:5px 9px;font-size:12px;
+ font-weight:bold;white-space:nowrap;z-index:4;pointer-events:none}
+.answer{position:absolute;z-index:5;padding:11px 13px;min-width:90px;
+ max-width:42%;background:white;border:3px solid white;border-radius:18px;
+ font-size:clamp(15px,2.4vw,21px);font-weight:bold;
+ box-shadow:0 4px 8px #0002;pointer-events:none}
+.answer.near{background:#fff18a;border-color:#ff8b35}
+#feedback{font-size:19px;font-weight:bold;min-height:35px;padding:8px}
+button{border:0;border-radius:25px;padding:12px 17px;margin:5px;
+ background:#ffcf45;color:#263454;font-size:15px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5}
+.overlay{position:fixed;inset:0;background:#28315cee;z-index:30;
+ display:flex;align-items:center;justify-content:center;padding:15px;overflow:auto}
+.panel{width:100%;max-width:620px;background:white;border-radius:25px;
+ padding:24px;color:#263454;max-height:95vh;overflow:auto}
+.panel h2{font-size:27px}
+.field{text-align:left;margin:12px 0}
+.field label{display:block;font-weight:bold;margin-bottom:6px}
+.field input{width:100%;padding:12px;border:2px solid #c9d3e5;
+ border-radius:12px;font-size:17px}
+.hidden{display:none!important}
+#cameraBox{position:fixed;right:8px;top:8px;width:125px;
+ border:3px solid white;border-radius:12px;overflow:hidden;
+ background:#222;z-index:15}
+#camera{width:100%;display:block;transform:scaleX(-1)}
+#camStatus{font-size:11px;color:white;padding:5px}
+#review{text-align:left}
+.reviewItem{padding:12px;margin:10px 0;border-radius:12px;background:#fff1f1;
+ border-left:5px solid #df6573}
+.reviewItem.correct{background:#e8f8e9;border-color:#38a45b}
+#certCanvas{width:100%;height:auto;border:1px solid #ddd;border-radius:8px}
+#resultScore{font-size:36px;font-weight:bold;color:#db6390}
+@media(max-width:500px){
+ #cameraBox{width:88px}
+ #game{height:52vh;min-height:320px}
+ #mouth{width:72px;height:55px}
+ .answer{min-width:80px;padding:8px 5px}
+ .panel{padding:18px}
 }
 </style>
 </head>
 
 <body>
 <header>
-  <h1>🎮 KOTAK PINTAR</h1>
-  <p>Bawa kotak ke jawapan yang betul menggunakan tangan!</p>
+ <h1>👾 MAKAN JAWAPAN! 🍎</h1>
+ <div class="stats">
+  <div class="pill">📚 Kata Kerja Tahun 1</div>
+  <div class="pill">⭐ Markah: <span id="score">0</span></div>
+  <div class="pill">Soalan: <span id="number">1</span>/5</div>
+ </div>
 </header>
 
-<div id="controls">
-  <button id="start">📷 Mula Kamera</button>
-  <button id="reset" class="grey">🔄 Mula Semula</button>
-  <button id="sound" class="green">🔊 Bunyi: ON</button>
-  <button id="fullscreen" class="grey">⛶ Skrin Penuh</button>
-  <button id="teacherLogin" class="grey">🔐 Mod Guru</button>
+<div id="question">Sedia untuk bermain?</div>
+
+<div id="game">
+ <div id="ground"></div>
+ <div id="monster">👾</div>
+ <div id="mouth"></div>
+ <div id="mouthLabel">😮 BUKA MULUT!</div>
+ <div id="answers"></div>
 </div>
 
-<div id="status">Tekan Mula Kamera untuk bermain.</div>
+<div id="feedback">Gerakkan muka dan buka mulut untuk makan jawapan.</div>
+<div>
+ <button id="startBtn">▶ MULA BERMAIN</button>
+ <button id="fullBtn">⛶ SKRIN PENUH</button>
+ <button id="soundBtn">🔊 Bunyi: ON</button>
+</div>
 
-<div id="stage">
-  <canvas id="game" width="960" height="540"></canvas>
-  <div id="cameraBox">
-    <video id="camera" autoplay playsinline muted></video>
-    <div id="cameraLabel">📷 Kamera anda</div>
+<div id="cameraBox">
+ <video id="camera" playsinline></video>
+ <div id="camStatus">Kamera belum aktif</div>
+</div>
+
+<!-- BORANG NAMA DAN KELAS -->
+<div id="startScreen" class="overlay">
+ <div class="panel">
+  <div style="font-size:60px">👾🍎</div>
+  <h2>Permainan Makan Jawapan!</h2>
+  <p>Isi maklumat sebelum mula bermain.</p>
+
+  <form id="studentForm">
+   <div class="field">
+    <label for="studentName">Nama murid</label>
+    <input id="studentName" maxlength="80" required
+     placeholder="Contoh: Ali bin Abu">
+   </div>
+   <div class="field">
+    <label for="studentClass">Kelas</label>
+    <input id="studentClass" maxlength="40" required
+     placeholder="Contoh: 1 Bakawali">
+   </div>
+   <p>😮 Buka mulut untuk makan jawapan.</p>
+   <p>↔️ Gerakkan muka untuk mengejar jawapan.</p>
+   <button id="playBtn" type="submit">🚀 MULA SEKARANG</button>
+  </form>
+ </div>
+</div>
+
+<!-- KEPUTUSAN, PEMBETULAN DAN SIJIL -->
+<div id="resultScreen" class="overlay hidden">
+ <div class="panel">
+  <div style="font-size:52px">🏆🎉</div>
+  <h2>Tahniah, <span id="resultName"></span>!</h2>
+  <p>Kelas: <b id="resultClass"></b></p>
+  <div id="resultScore">0 / 5</div>
+  <p id="resultMessage"></p>
+
+  <h3>📝 Semakan Jawapan</h3>
+  <div id="review"></div>
+
+  <h3>🏅 Sijil Pencapaian</h3>
+  <p>Sijil ini boleh dimuat turun sebagai gambar PNG.</p>
+  <canvas id="certCanvas" width="1200" height="850"></canvas>
+  <div>
+   <button id="downloadBtn">⬇️ MUAT TURUN SIJIL PNG</button>
   </div>
+  <div>
+   <button id="againBtn">🔄 MURID SETERUSNYA</button>
+  </div>
+ </div>
 </div>
-
-<!-- LOG MASUK GURU -->
-<section id="teacherLoginPanel">
-  <h2>🔐 Log Masuk Guru</h2>
-  <p>Masukkan kata laluan untuk mengubah soalan.</p>
-  <input id="teacherPassword" type="password"
-         placeholder="Kata laluan guru"
-         autocomplete="current-password">
-  <button id="unlockTeacher" class="green">Buka Editor</button>
-  <button id="closeLogin" class="grey">Batal</button>
-  <p id="loginMessage" role="status"></p>
-</section>
-
-<!-- EDITOR HANYA DIPAPARKAN SELEPAS LOG MASUK -->
-<section id="editor">
-  <h2>✏️ Editor Soalan Guru</h2>
-  <p>Masukkan satu soalan bagi setiap baris.</p>
-
-  <textarea id="questionData" spellcheck="false">Pilih perkataan BOLA. | MEJA | BOLA | 2
-Pilih haiwan. | KUCING | BUKU | 1
-Pilih buah-buahan. | KERUSI | EPAL | 2
-Pilih alat tulis. | PENSEL | IKAN | 1</textarea>
-
-  <p class="note">
-    Format: SOALAN | PILIHAN 1 | PILIHAN 2 | JAWAPAN BETUL.
-    Gunakan nombor 1 atau 2 untuk jawapan yang betul.
-  </p>
-
-  <button id="apply" class="green">Simpan Soalan</button>
-  <button id="defaultQuestions" class="grey">Soalan Asal</button>
-  <button id="closeEditor" class="red">Tutup Mod Guru</button>
-  <p id="editorStatus" class="note" role="status"></p>
-</section>
-
-<div id="help">
-  <b>Cara bermain</b>
-  <p>1. Tekan Mula Kamera dan benarkan akses kamera.</p>
-  <p>2. Cubit ibu jari dan jari telunjuk berhampiran kotak biru.</p>
-  <p>3. Gerakkan tangan sambil mencubit.</p>
-  <p>4. Lepaskan cubitan apabila seluruh kotak berada dalam ruang jawapan.</p>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
-        crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
-        crossorigin="anonymous"></script>
 
 <script>
-"use strict";
+/* UBAH SOALAN DI SINI JIKA PERLU.
+   correct: 0 = jawapan pertama, 1 = kedua,
+   2 = ketiga, 3 = keempat. */
 
-// Tukar kata laluan contoh ini sebelum digunakan.
-// PERHATIAN: kata laluan dalam JavaScript awam boleh diperiksa.
-const TEACHER_PASSWORD = "GURU123";
-
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-const video = document.getElementById("camera");
-const statusBox = document.getElementById("status");
-const startButton = document.getElementById("start");
-const loginPanel = document.getElementById("teacherLoginPanel");
-const editor = document.getElementById("editor");
-const passwordInput = document.getElementById("teacherPassword");
-const loginMessage = document.getElementById("loginMessage");
-const questionData = document.getElementById("questionData");
-const editorStatus = document.getElementById("editorStatus");
-
-const defaultText = questionData.value;
-
-let questions = [];
-let questionIndex = 0;
-let score = 0;
-let finished = false;
-let handSeen = false;
-let pinching = false;
-let dragging = false;
-let cameraReady = false;
-let cameraObject = null;
-let soundOn = true;
-let audioContext = null;
-let particles = [];
-let feedback = "";
-let feedbackUntil = 0;
-let lastFrameTime = 0;
-let teacherMode = false;
-
-const box = {
-  x: 448, y: 205, size: 64,
-  targetX: 448, targetY: 205
-};
-
-const zones = [
-  { x: 145, y: 380, w: 280, h: 105 },
-  { x: 535, y: 380, w: 280, h: 105 }
+const questions=[
+ {q:"Ali sedang ____ nasi.",
+  a:["makan","tidur","berlari","menyanyi"],correct:0},
+ {q:"Siti ____ buku cerita.",
+  a:["mandi","membaca","melompat","menangis"],correct:1},
+ {q:"Adik ____ bola di padang.",
+  a:["minum","tidur","menendang","menulis"],correct:2},
+ {q:"Ibu ____ baju yang kotor.",
+  a:["mencuci","menari","makan","berjalan"],correct:0},
+ {q:"Ayah ____ kereta ke pejabat.",
+  a:["memasak","melukis","berenang","memandu"],correct:3}
 ];
 
-let cursorX = 480;
-let cursorY = 250;
+const $=id=>document.getElementById(id);
+const video=$("camera"),game=$("game"),monster=$("monster");
+const mouth=$("mouth"),mouthLabel=$("mouthLabel");
+const answersEl=$("answers"),questionEl=$("question");
+const feedback=$("feedback"),camStatus=$("camStatus");
 
-function parseQuestions(text) {
-  const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-  const parsed = [];
+let studentName="",studentClass="";
+let score=0,index=0,active=false,busy=false,soundOn=true;
+let cameraStarted=false,faceMesh=null,cameraObject=null;
+let faceX=50,faceY=48,mouthOpen=false;
+let items=[],animationId=null,lastFrame=0,roundToken=0;
+let studentAnswers=[];
 
-  for (const line of lines) {
-    const parts = line.split("|").map(s => s.trim());
-
-    if (parts.length !== 4 ||
-        !parts[0] || !parts[1] || !parts[2] ||
-        !["1", "2"].includes(parts[3])) {
-      throw new Error(
-        "Format salah. Gunakan SOALAN | PILIHAN 1 | PILIHAN 2 | 1 atau 2."
-      );
-    }
-
-    parsed.push({
-      q: parts[0],
-      options: [parts[1], parts[2]],
-      correct: Number(parts[3]) - 1
-    });
-  }
-
-  if (!parsed.length) {
-    throw new Error("Masukkan sekurang-kurangnya satu soalan.");
-  }
-
-  return parsed;
+function beep(freq=650,duration=.12){
+ if(!soundOn)return;
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;
+  window.audioCtx ||= new AC();
+  const c=window.audioCtx;
+  if(c.state==="suspended")c.resume();
+  const o=c.createOscillator(),g=c.createGain();
+  o.frequency.value=freq;g.gain.value=.07;
+  o.connect(g);g.connect(c.destination);o.start();
+  g.gain.exponentialRampToValueAtTime(.001,c.currentTime+duration);
+  o.stop(c.currentTime+duration);
+ }catch(e){}
+}
+function speak(text){
+ if(!soundOn||!window.speechSynthesis)return;
+ speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(text);
+ u.lang="ms-MY";u.rate=.9;speechSynthesis.speak(u);
+}
+function shuffle(arr){
+ return arr.map(v=>({v,sort:Math.random()}))
+ .sort((a,b)=>a.sort-b.sort).map(o=>o.v);
 }
 
-function applyQuestions() {
-  try {
-    const newQuestions = parseQuestions(questionData.value);
-    questions = newQuestions;
-    resetGame();
-    editorStatus.textContent =
-      "Berjaya! " + questions.length + " soalan disimpan untuk sesi ini.";
-    editorStatus.style.color = "#168454";
+function setQuestion(){
+ if(index>=questions.length){finishGame();return;}
+ roundToken++;busy=false;items=[];answersEl.innerHTML="";
+ const q=questions[index];
+ questionEl.textContent=q.q;
+ $("number").textContent=index+1;
+ feedback.textContent="Cari jawapan yang betul!";
+ monster.textContent="👾";
+ mouth.style.background="#ffcfdd88";
 
-    // Tutup editor selepas soalan berjaya disimpan.
-    editor.classList.remove("open");
-    teacherMode = false;
-    statusBox.textContent = "Soalan dikemas kini. Sedia untuk bermain.";
-  } catch (error) {
-    editorStatus.textContent = error.message;
-    editorStatus.style.color = "#c52d42";
-  }
-}
+ const positions=[[7,9],[66,9],[7,76],[66,76]];
+ const choices=shuffle(q.a.map((text,i)=>({
+  text,correct:i===q.correct,originalIndex:i
+ })));
 
-function playTone(type) {
-  if (!soundOn) return;
-
-  try {
-    audioContext ||= new (
-      window.AudioContext || window.webkitAudioContext
-    )();
-
-    if (audioContext.state === "suspended") audioContext.resume();
-
-    const notes = type === "correct" ? [660, 880, 1100]
-      : type === "wrong" ? [240, 180]
-      : type === "pick" ? [520]
-      : [520, 680];
-
-    const now = audioContext.currentTime;
-
-    notes.forEach((freq, i) => {
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.0001, now + i * 0.12);
-      gain.gain.exponentialRampToValueAtTime(
-        0.14, now + i * 0.12 + 0.025
-      );
-      gain.gain.exponentialRampToValueAtTime(
-        0.0001, now + i * 0.12 + 0.17
-      );
-
-      osc.connect(gain);
-      gain.connect(audioContext.destination);
-      osc.start(now + i * 0.12);
-      osc.stop(now + i * 0.12 + 0.19);
-    });
-  } catch (error) {
-    console.warn("Audio tidak tersedia.", error);
-  }
-}
-
-function say(text, duration = 2000, tone = null) {
-  feedback = text;
-  feedbackUntil = performance.now() + duration;
-  if (tone) playTone(tone);
-}
-
-function resetGame() {
-  questionIndex = 0;
-  score = 0;
-  finished = false;
-  dragging = false;
-  pinching = false;
-  particles = [];
-
-  box.x = box.targetX = 448;
-  box.y = box.targetY = 205;
-
-  say("Cubit kotak biru untuk mengambilnya!", 2400);
-  draw();
-}
-
-function spawnParticles(x, y, color) {
-  for (let i = 0; i < 28; i++) {
-    particles.push({
-      x, y,
-      vx: (Math.random() - 0.5) * 7,
-      vy: (Math.random() - 0.8) * 7,
-      life: 1,
-      color
-    });
-  }
-}
-
-function drawParticles() {
-  particles.forEach(p => {
-    ctx.globalAlpha = Math.max(0, p.life);
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 5 * p.life, 0, Math.PI * 2);
-    ctx.fill();
+ choices.forEach((obj,i)=>{
+  const el=document.createElement("div");
+  el.className="answer";el.textContent=obj.text;
+  answersEl.appendChild(el);
+  items.push({
+   el,text:obj.text,correct:obj.correct,
+   x:positions[i][0],y:positions[i][1],
+   phase:Math.random()*6,eaten:false
   });
-  ctx.globalAlpha = 1;
+ });
+ speak("Soalan "+(index+1)+". "+q.q);
 }
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+function updateFacePosition(){
+ const r=game.getBoundingClientRect();
+ const x=faceX/100*r.width,y=faceY/100*r.height;
+ monster.style.left=faceX+"%";
+ monster.style.top=((y-r.height*.08)/r.height*100)+"%";
+ mouth.style.left=faceX+"%";
+ mouth.style.top=faceY+"%";
+ mouthLabel.style.left=faceX+"%";
+ mouthLabel.style.top=((y+r.height*.11)/r.height*100)+"%";
+}
 
-  const bg = ctx.createLinearGradient(0, 0, 960, 540);
-  bg.addColorStop(0, "#f5f8ff");
-  bg.addColorStop(1, "#dce8ff");
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, 960, 540);
+function animate(t){
+ animationId=requestAnimationFrame(animate);
+ if(!active||busy||t-lastFrame<25)return;
+ lastFrame=t;
+ const mr=mouth.getBoundingClientRect();
 
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#3157b7";
-  ctx.font = "bold 25px Arial";
-  ctx.fillText("KOTAK PINTAR", 25, 38);
-
-  ctx.textAlign = "right";
-  ctx.fillText("⭐ Markah: " + score, 930, 38);
-
-  if (finished) {
-    ctx.fillStyle = "white";
-    ctx.beginPath();
-    ctx.roundRect(160, 125, 640, 280, 24);
-    ctx.fill();
-
-    ctx.strokeStyle = "#78cba0";
-    ctx.lineWidth = 5;
-    ctx.stroke();
-
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#168454";
-    ctx.font = "bold 44px Arial";
-    ctx.fillText("TAHNIAH! 🎉", 480, 215);
-
-    ctx.fillStyle = "#24345b";
-    ctx.font = "bold 30px Arial";
-    ctx.fillText("Markah: " + score + "/" + questions.length, 480, 275);
-
-    ctx.font = "22px Arial";
-    ctx.fillText("Tekan Mula Semula untuk bermain lagi.", 480, 330);
-    drawParticles();
-    return;
-  }
-
-  const q = questions[questionIndex];
-
-  ctx.textAlign = "center";
-  ctx.fillStyle = "#24345b";
-  ctx.font = "bold 27px Arial";
-  ctx.fillText(
-    "Soalan " + (questionIndex + 1) + " / " + questions.length,
-    480, 82
+ items.forEach(item=>{
+  if(item.eaten)return;
+  item.phase+=.025;
+  item.el.style.left=(item.x+Math.sin(item.phase)*1.1)+"%";
+  item.el.style.top=(item.y+Math.cos(item.phase*1.3)*1.1)+"%";
+  const r=item.el.getBoundingClientRect();
+  const d=Math.hypot(
+   r.left+r.width/2-(mr.left+mr.width/2),
+   r.top+r.height/2-(mr.top+mr.height/2)
   );
+  item.el.classList.toggle("near",d<85);
+  if(mouthOpen&&d<60&&!busy)eatAnswer(item);
+ });
+}
 
-  ctx.font = "bold 30px Arial";
-  ctx.fillText(q.q, 480, 135);
+function eatAnswer(item){
+ if(busy||item.eaten)return;
+ busy=true;item.eaten=true;
+ const q=questions[index],thisToken=roundToken;
+ const chosen=item.text;
+ studentAnswers[index]={
+  question:q.q,
+  chosen,
+  correctAnswer:q.a[q.correct],
+  isCorrect:item.correct
+ };
+ item.el.style.opacity="0";
+ item.el.style.transform="scale(1.7)";
+ monster.textContent="😮";
 
-  zones.forEach((z, i) => {
-    ctx.fillStyle = "#ffffff";
-    ctx.strokeStyle = i === 0 ? "#8ca7ed" : "#83cbb1";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.roundRect(z.x, z.y, z.w, z.h, 18);
-    ctx.fill();
-    ctx.stroke();
+ if(item.correct){
+  score++;
+  $("score").textContent=score;
+  feedback.textContent="🎉 Betul! Bagus!";
+  beep(950,.18);speak("Betul! Bagus!");
+ }else{
+  feedback.textContent="💡 Belum betul. Teruskan mencuba!";
+  beep(250,.25);speak("Belum betul. Teruskan mencuba.");
+ }
 
-    ctx.fillStyle = "#3157b7";
-    ctx.font = "bold 27px Arial";
-    ctx.fillText(q.options[i], z.x + z.w / 2, z.y + 62);
+ setTimeout(()=>{
+  if(thisToken!==roundToken)return;
+  index++;
+  if(index>=questions.length)finishGame();
+  else setQuestion();
+ },1200);
+}
+
+async function startCamera(){
+ if(cameraStarted)return true;
+ if(!navigator.mediaDevices?.getUserMedia){
+  alert("Kamera memerlukan HTTPS dan pelayar yang menyokong kamera.");
+  return false;
+ }
+ try{
+  faceMesh=new FaceMesh({
+   locateFile:file=>"https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/"+file
+  });
+  faceMesh.setOptions({
+   maxNumFaces:1,refineLandmarks:true,
+   minDetectionConfidence:.5,minTrackingConfidence:.5
   });
 
-  ctx.save();
-  ctx.shadowColor = dragging ? "#ffad42aa" : "#3157b755";
-  ctx.shadowBlur = dragging ? 24 : 12;
-  ctx.fillStyle = dragging ? "#ffad42" : "#38a8e8";
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.roundRect(box.x, box.y, box.size, box.size, 14);
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
+  faceMesh.onResults(results=>{
+   const faces=results.multiFaceLandmarks;
+   if(!faces||!faces.length){
+    mouthOpen=false;camStatus.textContent="Wajah tidak dikesan";return;
+   }
+   const lm=faces[0];
+   faceX=Math.max(8,Math.min(92,(1-lm[1].x)*100));
+   faceY=Math.max(20,Math.min(70,lm[1].y*100));
+   updateFacePosition();
 
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 29px Arial";
-  ctx.fillText("K", box.x + box.size / 2, box.y + 42);
-
-  if (handSeen) {
-    ctx.beginPath();
-    ctx.arc(cursorX, cursorY, 8, 0, Math.PI * 2);
-    ctx.fillStyle = pinching ? "#ff8c27" : "#168454";
-    ctx.fill();
-  }
-
-  if (performance.now() < feedbackUntil) {
-    ctx.fillStyle = "#ffffffed";
-    ctx.beginPath();
-    ctx.roundRect(180, 285, 600, 52, 12);
-    ctx.fill();
-
-    ctx.fillStyle = "#24345b";
-    ctx.font = "bold 19px Arial";
-    ctx.fillText(feedback, 480, 318);
-  }
-
-  drawParticles();
-}
-
-function releaseBox() {
-  dragging = false;
-  pinching = false;
-
-  let dropped = -1;
-
-  zones.forEach((z, i) => {
-    const fullyInside =
-      box.x >= z.x &&
-      box.y >= z.y &&
-      box.x + box.size <= z.x + z.w &&
-      box.y + box.size <= z.y + z.h;
-
-    if (fullyInside) dropped = i;
+   const upper=lm[13],lower=lm[14],left=lm[61],right=lm[291];
+   const gap=Math.hypot(upper.x-lower.x,upper.y-lower.y);
+   const width=Math.hypot(left.x-right.x,left.y-right.y);
+   mouthOpen=gap/(width||.001)>.23;
+   monster.textContent=mouthOpen?"😮":"👾";
+   camStatus.textContent=mouthOpen?"Mulut terbuka!":"Kamera aktif";
+   mouth.style.background=mouthOpen?"#ff9dbb":"#ffcfdd88";
   });
 
-  if (dropped === -1) {
-    say("Bawa seluruh kotak ke dalam ruang jawapan.", 2000, "wrong");
-    box.targetX = box.x = 448;
-    box.targetY = box.y = 205;
-    return;
-  }
-
-  if (dropped === questions[questionIndex].correct) {
-    score++;
-    spawnParticles(box.x + box.size / 2, box.y + box.size / 2, "#21b879");
-    questionIndex++;
-
-    if (questionIndex >= questions.length) {
-      finished = true;
-      say("Tahniah! Semua soalan selesai!", 4000, "correct");
-    } else {
-      say("Betul! Bagus! 🌟", 1800, "correct");
-    }
-  } else {
-    say("Belum tepat. Cuba lagi!", 2000, "wrong");
-  }
-
-  box.targetX = box.x = 448;
-  box.targetY = box.y = 205;
-}
-
-function onResults(results) {
-  const landmarks = results.multiHandLandmarks;
-  handSeen = !!(landmarks && landmarks.length);
-
-  if (!handSeen) {
-    pinching = false;
-    dragging = false;
-    statusBox.textContent = "Tangan belum dikesan. Tunjukkan tangan.";
-    return;
-  }
-
-  const lm = landmarks[0];
-  const thumb = lm[4];
-  const index = lm[8];
-  const distance = Math.hypot(
-    thumb.x - index.x,
-    thumb.y - index.y
-  );
-
-  pinching = distance < 0.065;
-
-  cursorX = (1 - (thumb.x + index.x) / 2) * canvas.width;
-  cursorY = ((thumb.y + index.y) / 2) * canvas.height;
-
-  if (!finished) {
-    if (pinching && !dragging) {
-      const nearBox =
-        cursorX >= box.x - 20 &&
-        cursorX <= box.x + box.size + 20 &&
-        cursorY >= box.y - 20 &&
-        cursorY <= box.y + box.size + 20;
-
-      if (nearBox) {
-        dragging = true;
-        playTone("pick");
-      }
-    }
-
-    if (pinching && dragging) {
-      box.targetX = Math.max(
-        0, Math.min(canvas.width - box.size, cursorX - box.size / 2)
-      );
-      box.targetY = Math.max(
-        150, Math.min(canvas.height - box.size, cursorY - box.size / 2)
-      );
-    }
-
-    if (!pinching && dragging) releaseBox();
-  }
-
-  statusBox.textContent = dragging
-    ? "Kotak dipegang! Gerakkan tangan ke jawapan."
-    : "Tangan dikesan. Cubit kotak biru untuk memegang.";
-}
-
-function animate(time) {
-  const dt = lastFrameTime
-    ? Math.min(2, (time - lastFrameTime) / 16.67)
-    : 1;
-
-  lastFrameTime = time;
-
-  box.x += (box.targetX - box.x) * Math.min(1, 0.38 * dt);
-  box.y += (box.targetY - box.y) * Math.min(1, 0.38 * dt);
-
-  particles = particles.filter(p => p.life > 0.03);
-  particles.forEach(p => {
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-    p.vy += 0.12 * dt;
-    p.life -= 0.025 * dt;
+  cameraObject=new Camera(video,{
+   onFrame:async()=>{await faceMesh.send({image:video});},
+   width:640,height:480
   });
-
-  draw();
-  requestAnimationFrame(animate);
+  await cameraObject.start();
+  cameraStarted=true;
+  return true;
+ }catch(e){
+  console.error(e);
+  alert("Kamera gagal diaktifkan. Semak kebenaran kamera dan cuba lagi.");
+  return false;
+ }
 }
 
-const hands = new Hands({
-  locateFile: file =>
-    "https://cdn.jsdelivr.net/npm/@mediapipe/hands/" + file
+$("studentForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ studentName=$("studentName").value.trim();
+ studentClass=$("studentClass").value.trim();
+ if(!studentName||!studentClass)return;
+
+ $("playBtn").disabled=true;
+ const ok=await startCamera();
+ $("playBtn").disabled=false;
+ if(!ok)return;
+
+ $("startScreen").classList.add("hidden");
+ $("resultScreen").classList.add("hidden");
+ score=0;index=0;busy=false;active=true;studentAnswers=[];
+ $("score").textContent=0;
+ setQuestion();
+ if(!animationId)animate(0);
 });
 
-hands.setOptions({
-  maxNumHands: 1,
-  modelComplexity: 1,
-  minDetectionConfidence: 0.65,
-  minTrackingConfidence: 0.60
-});
-
-hands.onResults(onResults);
-
-startButton.addEventListener("click", async () => {
-  if (cameraReady) return;
-
-  startButton.disabled = true;
-  statusBox.textContent = "Sedang memulakan kamera...";
-
-  try {
-    audioContext ||= new (
-      window.AudioContext || window.webkitAudioContext
-    )();
-
-    if (audioContext.state === "suspended") {
-      await audioContext.resume();
-    }
-
-    cameraObject = new Camera(video, {
-      onFrame: async () => {
-        if (video.readyState >= 2) {
-          await hands.send({ image: video });
-        }
-      },
-      width: 640,
-      height: 480
-    });
-
-    await cameraObject.start();
-    cameraReady = true;
-    startButton.textContent = "✅ Kamera Aktif";
-    say("Kamera aktif! Cubit kotak biru.", 2400);
-  } catch (error) {
-    console.error(error);
-    statusBox.textContent =
-      "Kamera gagal dibuka. Benarkan akses kamera dan cuba lagi.";
-    startButton.disabled = false;
+$("startBtn").addEventListener("click",()=>{
+ if(active){
+  if(confirm("Kembali ke borang? Permainan semasa akan dihentikan.")){
+   active=false;
+   $("startScreen").classList.remove("hidden");
   }
+ }else $("startScreen").classList.remove("hidden");
 });
 
-document.getElementById("reset").addEventListener("click", resetGame);
+function finishGame(){
+ active=false;busy=false;
+ $("resultName").textContent=studentName;
+ $("resultClass").textContent=studentClass;
+ $("resultScore").textContent=score+" / "+questions.length;
+ $("resultMessage").textContent=
+  score===5?"Cemerlang! Semua jawapan betul!":
+  score>=3?"Bagus! Teruskan berlatih kata kerja!":
+  "Teruskan berusaha. Semak pembetulan di bawah.";
+ showReview();
+ drawCertificate();
+ $("resultScreen").classList.remove("hidden");
+ speak("Permainan tamat. Markah "+score+" daripada lima.");
+}
 
-document.getElementById("sound").addEventListener("click", event => {
-  soundOn = !soundOn;
-  event.currentTarget.textContent = soundOn
-    ? "🔊 Bunyi: ON"
-    : "🔇 Bunyi: OFF";
+function showReview(){
+ const review=$("review");
+ review.innerHTML="";
+ studentAnswers.forEach((a,i)=>{
+  const div=document.createElement("div");
+  div.className="reviewItem"+(a.isCorrect?" correct":"");
+  const title=document.createElement("b");
+  title.textContent=(i+1)+". "+a.question;
+  const line1=document.createElement("p");
+  line1.textContent="Jawapan murid: "+a.chosen;
+  const line2=document.createElement("p");
+  line2.textContent=a.isCorrect?"✅ Betul!":"❌ Jawapan yang betul: "+a.correctAnswer;
+  div.append(title,line1,line2);
+  review.appendChild(div);
+ });
+}
 
-  if (soundOn) playTone("correct");
+function drawCertificate(){
+ const c=$("certCanvas"),ctx=c.getContext("2d");
+ const W=c.width,H=c.height;
+ ctx.clearRect(0,0,W,H);
+ ctx.fillStyle="#fffdf4";ctx.fillRect(0,0,W,H);
+
+ // Bingkai sijil
+ ctx.strokeStyle="#d6a83d";ctx.lineWidth=18;
+ ctx.strokeRect(24,24,W-48,H-48);
+ ctx.strokeStyle="#253c70";ctx.lineWidth=4;
+ ctx.strokeRect(45,45,W-90,H-90);
+
+ ctx.textAlign="center";
+ ctx.fillStyle="#253c70";
+ ctx.font="bold 38px Arial";
+ ctx.fillText("SEKOLAH RENDAH",W/2,115);
+ ctx.fillStyle="#bd8b20";
+ ctx.font="bold 66px Georgia";
+ ctx.fillText("SIJIL PENCAPAIAN",W/2,205);
+
+ ctx.fillStyle="#37476b";
+ ctx.font="30px Arial";
+ ctx.fillText("Permainan Pendidikan Bahasa Melayu",W/2,270);
+ ctx.fillText("Kata Kerja Tahun 1",W/2,315);
+ ctx.font="27px Arial";
+ ctx.fillText("Dengan ini dianugerahkan kepada",W/2,390);
+
+ ctx.fillStyle="#bd315c";
+ ctx.font="bold 48px Arial";
+ wrapText(ctx,studentName,W/2,455,980,58);
+
+ ctx.fillStyle="#37476b";
+ ctx.font="28px Arial";
+ ctx.fillText("Kelas: "+studentClass,W/2,520);
+
+ ctx.fillStyle="#253c70";
+ ctx.font="bold 38px Arial";
+ ctx.fillText("Markah: "+score+" / "+questions.length,W/2,590);
+
+ ctx.fillStyle="#37476b";
+ ctx.font="24px Arial";
+ ctx.fillText(
+  score===5?"Cemerlang! Semua jawapan betul!":
+  score>=3?"Syabas! Teruskan usaha!":"Terus belajar dan cuba lagi!",
+  W/2,650
+ );
+
+ ctx.font="22px Arial";
+ ctx.fillText("Tarikh: "+new Date().toLocaleDateString("ms-MY"),W/2,710);
+
+ ctx.fillStyle="#bd8b20";
+ ctx.font="bold 28px Arial";
+ ctx.fillText("★ TAHNIAH DAN SYABAS ★",W/2,770);
+}
+
+function wrapText(ctx,text,x,y,maxWidth,lineHeight){
+ const words=text.split(/\s+/);let line="",lines=[];
+ for(const word of words){
+  const test=line?line+" "+word:word;
+  if(ctx.measureText(test).width>maxWidth&&line){
+   lines.push(line);line=word;
+  }else line=test;
+ }
+ if(line)lines.push(line);
+ const total=(lines.length-1)*lineHeight;
+ lines.forEach((l,i)=>ctx.fillText(l,x,y-total/2+i*lineHeight));
+}
+
+$("downloadBtn").addEventListener("click",()=>{
+ const c=$("certCanvas");
+ const link=document.createElement("a");
+ const safeName=studentName.replace(/[^a-z0-9_-]/gi,"_");
+ link.download="Sijil_Kata_Kerja_"+safeName+".png";
+ link.href=c.toDataURL("image/png");
+ link.click();
 });
 
-document.getElementById("fullscreen").addEventListener("click", async () => {
-  try {
-    if (!document.fullscreenElement) {
-      await document.documentElement.requestFullscreen();
-    } else {
-      await document.exitFullscreen();
-    }
-  } catch (error) {
-    statusBox.textContent = "Skrin penuh tidak tersedia dalam pelayar ini.";
-  }
+$("againBtn").addEventListener("click",()=>{
+ active=false;
+ $("resultScreen").classList.add("hidden");
+ $("studentName").value="";
+ $("studentClass").value="";
+ $("startScreen").classList.remove("hidden");
+ $("studentName").focus();
 });
 
-document.addEventListener("fullscreenchange", () => {
-  const isFull = !!document.fullscreenElement;
-  document.body.classList.toggle("fullscreen", isFull);
-
-  document.getElementById("fullscreen").textContent = isFull
-    ? "⤢ Keluar Skrin Penuh"
-    : "⛶ Skrin Penuh";
+$("fullBtn").addEventListener("click",async()=>{
+ try{
+  if(!document.fullscreenElement)await document.documentElement.requestFullscreen();
+  else await document.exitFullscreen();
+ }catch(e){alert("Mod skrin penuh tidak disokong.");}
 });
 
-// MOD GURU
-document.getElementById("teacherLogin").addEventListener("click", () => {
-  loginPanel.classList.add("open");
-  passwordInput.focus();
+$("soundBtn").addEventListener("click",()=>{
+ soundOn=!soundOn;
+ $("soundBtn").textContent=soundOn?"🔊 Bunyi: ON":"🔇 Bunyi: OFF";
 });
-
-document.getElementById("closeLogin").addEventListener("click", () => {
-  loginPanel.classList.remove("open");
-  passwordInput.value = "";
-  loginMessage.textContent = "";
-});
-
-document.getElementById("unlockTeacher").addEventListener("click", () => {
-  if (passwordInput.value === TEACHER_PASSWORD) {
-    teacherMode = true;
-    loginPanel.classList.remove("open");
-    editor.classList.add("open");
-    passwordInput.value = "";
-    loginMessage.textContent = "";
-    editorStatus.textContent = "Mod Guru dibuka.";
-    editor.scrollIntoView({ behavior: "smooth", block: "start" });
-  } else {
-    loginMessage.textContent = "Kata laluan tidak betul.";
-    loginMessage.style.color = "#c52d42";
-  }
-});
-
-passwordInput.addEventListener("keydown", event => {
-  if (event.key === "Enter") {
-    document.getElementById("unlockTeacher").click();
-  }
-});
-
-document.getElementById("apply").addEventListener("click", () => {
-  if (!teacherMode) return;
-  applyQuestions();
-});
-
-document.getElementById("defaultQuestions").addEventListener("click", () => {
-  if (!teacherMode) return;
-  questionData.value = defaultText;
-  applyQuestions();
-});
-
-document.getElementById("closeEditor").addEventListener("click", () => {
-  editor.classList.remove("open");
-  teacherMode = false;
-  statusBox.textContent = "Mod Murid aktif. Selamat bermain!";
-});
-
-// Mulakan dengan soalan asal; editor kekal tersembunyi.
-questions = parseQuestions(defaultText);
-resetGame();
-requestAnimationFrame(animate);
 </script>
 </body>
 </html>
