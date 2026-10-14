@@ -3,115 +3,251 @@
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tepuk Belon Kata Kerja</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tepuk Belon Kata Kerja Tahun 1</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
 <style>
 *{box-sizing:border-box}
+:root{
+  --purple:#6236c7;
+  --blue:#2563eb;
+  --green:#16a34a;
+  --red:#dc2626;
+}
 body{
-  margin:0;font-family:Arial,sans-serif;overflow:hidden;
-  background:linear-gradient(#bde9ff,#f0e4ff);
-  color:#24305e
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  color:#20265a;
+  background:linear-gradient(180deg,#c9f0ff,#f0e6ff);
+  overflow:hidden;
 }
+button{font:inherit;cursor:pointer}
 header{
-  position:relative;z-index:5;text-align:center;padding:10px;
-  background:#ffffffdd;box-shadow:0 3px 10px #0002
+  position:relative;
+  z-index:5;
+  text-align:center;
+  padding:9px 12px;
+  background:#ffffffed;
+  box-shadow:0 3px 12px #0002;
 }
-header h1{margin:3px;font-size:clamp(20px,4vw,34px);color:#5533bb}
-header p{margin:4px;font-weight:bold}
+header h1{
+  margin:2px 0 5px;
+  color:var(--purple);
+  font-size:clamp(20px,3.5vw,32px);
+}
+header p{margin:0;font-weight:bold}
 #scoreBox{
-  position:absolute;right:12px;top:12px;background:#fff1a8;
-  border-radius:14px;padding:10px;font-weight:bold
+  display:inline-block;
+  margin-top:5px;
+  padding:6px 12px;
+  background:#fff0a6;
+  border-radius:12px;
+  font-weight:bold;
 }
 #question{
-  position:relative;z-index:5;margin:12px auto;padding:15px;
-  width:min(850px,92%);text-align:center;background:white;
-  border:3px solid #fff;border-radius:22px;
-  box-shadow:0 5px 15px #0001
+  position:relative;
+  z-index:5;
+  width:min(800px,92%);
+  margin:10px auto;
+  padding:10px 14px;
+  text-align:center;
+  background:white;
+  border:3px solid #fff;
+  border-radius:20px;
+  box-shadow:0 4px 12px #0001;
 }
-#questionText{font-size:clamp(20px,3.8vw,32px);font-weight:900}
-#progress{font-weight:bold;color:#6b4acb}
+#progress{font-size:14px;font-weight:bold;color:var(--purple)}
+#questionText{
+  margin:7px 0 2px;
+  font-size:clamp(21px,3.5vw,32px);
+  line-height:1.3;
+}
+#instruction{
+  font-size:14px;
+  color:#475569;
+  margin-top:5px;
+}
 #arena{
-  position:relative;width:100%;height:calc(100dvh - 170px);
-  min-height:300px;overflow:hidden
+  position:relative;
+  width:100%;
+  height:calc(100dvh - 175px);
+  min-height:300px;
+  overflow:hidden;
 }
 .balloon{
-  position:absolute;top:-150px;width:clamp(100px,17vw,160px);
-  height:clamp(125px,20vw,190px);
+  position:absolute;
+  top:-200px;
+  width:clamp(105px,15vw,155px);
+  height:clamp(130px,19vw,185px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:12px;
+  border:3px solid #ffffffd9;
   border-radius:50% 50% 46% 46%;
-  display:flex;align-items:center;justify-content:center;
-  padding:14px;text-align:center;color:white;
-  font-size:clamp(16px,2.5vw,23px);font-weight:900;
+  color:white;
+  text-align:center;
+  font-size:clamp(16px,2.2vw,22px);
+  font-weight:900;
   text-shadow:0 2px 3px #0005;
-  border:3px solid #ffffffaa;
   box-shadow:inset -10px -12px 0 #00000012,0 5px 12px #0002;
   transform:translateX(-50%);
-  cursor:pointer;user-select:none
+  user-select:none;
 }
 .balloon::before{
-  content:"";position:absolute;top:17%;left:18%;
-  width:18%;height:22%;border-radius:50%;
-  background:#ffffff8c;transform:rotate(30deg)
+  content:"";
+  position:absolute;
+  left:20%;
+  top:16%;
+  width:16%;
+  height:22%;
+  border-radius:50%;
+  background:#ffffffa6;
+  transform:rotate(30deg);
 }
 .balloon::after{
-  content:"";position:absolute;bottom:-15px;
-  width:0;height:0;border-left:9px solid transparent;
-  border-right:9px solid transparent;border-top:17px solid var(--tail)
+  content:"";
+  position:absolute;
+  bottom:-15px;
+  width:0;height:0;
+  border-left:9px solid transparent;
+  border-right:9px solid transparent;
+  border-top:17px solid var(--tail);
 }
-.balloon span{position:relative;z-index:1;overflow-wrap:anywhere}
-.red{background:linear-gradient(135deg,#ff7777,#e9275a);--tail:#e9275a}
-.blue{background:linear-gradient(135deg,#65caff,#2674ed);--tail:#2674ed}
-.green{background:linear-gradient(135deg,#6ce6a1,#119e70);--tail:#119e70}
-.purple{background:linear-gradient(135deg,#c89aff,#7944d6);--tail:#7944d6}
-.orange{background:linear-gradient(135deg,#ffc36e,#f07822);--tail:#f07822}
+.balloon span{
+  position:relative;
+  z-index:1;
+  overflow-wrap:anywhere;
+}
+.red{background:linear-gradient(135deg,#ff7a89,#e32259);--tail:#e32259}
+.blue{background:linear-gradient(135deg,#60d3ff,#2674e8);--tail:#2674e8}
+.green{background:linear-gradient(135deg,#6be6a4,#119767);--tail:#119767}
+.purple{background:linear-gradient(135deg,#ce9cff,#7c3aed);--tail:#7c3aed}
+.orange{background:linear-gradient(135deg,#ffd071,#ef741c);--tail:#ef741c}
+.balloon.targeted{
+  outline:5px solid #ffeb3b;
+  filter:brightness(1.12);
+}
+.balloon.hit{
+  opacity:.15;
+  transform:translateX(-50%) scale(1.3);
+}
 #cameraBox{
-  position:fixed;z-index:20;right:12px;bottom:12px;width:150px;
-  border:3px solid white;border-radius:15px;overflow:hidden;
-  background:#111;box-shadow:0 3px 15px #0004
+  position:fixed;
+  z-index:30;
+  top:10px;
+  right:10px;
+  width:145px;
+  border:3px solid white;
+  border-radius:15px;
+  overflow:hidden;
+  background:#111827;
+  box-shadow:0 3px 14px #0004;
 }
-#video{display:block;width:100%;transform:scaleX(-1)}
-#cameraStatus{background:#111;color:white;text-align:center;padding:5px;font-size:11px}
+#video{
+  display:block;
+  width:100%;
+  aspect-ratio:4/3;
+  object-fit:cover;
+  transform:scaleX(-1);
+}
+#cameraStatus{
+  padding:5px 3px;
+  text-align:center;
+  background:#111827;
+  color:#bbf7d0;
+  font-size:11px;
+  font-weight:bold;
+}
+#handCanvas{
+  position:fixed;
+  inset:0;
+  z-index:20;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+}
 #message{
-  position:fixed;z-index:15;left:50%;top:47%;
-  transform:translate(-50%,-50%);width:min(85%,600px);
-  text-align:center;font-size:clamp(26px,5vw,48px);
-  font-weight:900;color:#fff;text-shadow:0 3px 8px #0008;
-  pointer-events:none
+  position:fixed;
+  z-index:25;
+  top:48%;
+  left:50%;
+  width:min(90%,600px);
+  transform:translate(-50%,-50%);
+  text-align:center;
+  font-size:clamp(27px,5vw,46px);
+  font-weight:900;
+  color:white;
+  text-shadow:0 3px 7px #000a;
+  pointer-events:none;
 }
 .panel{
-  position:fixed;z-index:30;inset:0;background:#0008;
-  display:flex;align-items:center;justify-content:center;padding:18px
+  position:fixed;
+  z-index:50;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:15px;
+  background:#0009;
 }
-.panelCard{
-  width:min(650px,100%);max-height:90vh;overflow:auto;
-  padding:25px;background:white;border-radius:25px;text-align:center;
-  box-shadow:0 12px 35px #0003
+.card{
+  width:min(650px,100%);
+  max-height:90vh;
+  overflow:auto;
+  padding:25px;
+  border-radius:25px;
+  background:white;
+  text-align:center;
+  box-shadow:0 12px 35px #0004;
 }
-.panelCard h2{font-size:clamp(26px,5vw,38px);color:#5533bb}
-.panelCard p{line-height:1.6}
-button{
-  border:0;border-radius:15px;padding:14px 22px;margin:6px;
-  background:#6741d9;color:white;font-weight:bold;font-size:17px;
-  cursor:pointer
+.card h2{color:var(--purple);font-size:clamp(26px,5vw,36px)}
+.card p{line-height:1.65}
+.btn{
+  border:0;
+  border-radius:14px;
+  padding:14px 23px;
+  margin:5px;
+  background:var(--purple);
+  color:white;
+  font-size:17px;
+  font-weight:bold;
 }
-button:disabled{opacity:.5}
+.btn:disabled{opacity:.55}
 .hidden{display:none!important}
-#review{text-align:left;line-height:1.7}
-.reviewItem{background:#f4f1ff;border-radius:12px;padding:12px;margin:8px 0}
-.correctText{color:#13804b;font-weight:bold}
-.wrongText{color:#bd243e;font-weight:bold}
+#resultScore{
+  font-size:48px;
+  font-weight:900;
+  color:var(--purple);
+}
+#review{text-align:left;line-height:1.65}
+.reviewItem{
+  margin:8px 0;
+  padding:12px;
+  border-radius:12px;
+  background:#f4f1ff;
+}
+.right{color:#15803d;font-weight:bold}
+.wrong{color:#b91c1c;font-weight:bold}
+#cameraError{color:#b91c1c;font-weight:bold}
 @media(max-width:600px){
-  #scoreBox{position:static;display:inline-block;padding:6px 10px}
-  header{padding:6px}
-  #question{margin:7px auto;padding:9px}
-  #arena{height:calc(100dvh - 175px)}
-  #cameraBox{width:105px;right:5px;bottom:5px}
+  header{padding-top:7px}
+  #cameraBox{width:105px;top:7px;right:7px}
+  header h1{padding-right:85px;font-size:18px}
+  header p{padding-right:85px;font-size:12px}
+  #scoreBox{font-size:12px;margin-top:4px}
+  #question{margin:7px auto;padding:8px}
+  #instruction{font-size:12px}
+  #arena{height:calc(100dvh - 165px)}
+  .balloon{width:105px;height:135px;font-size:15px;padding:8px}
+  .card{padding:18px}
 }
 </style>
 </head>
+
 <body>
 
 <header>
@@ -121,11 +257,15 @@ button:disabled{opacity:.5}
 </header>
 
 <section id="question">
-  <div id="progress">Soalan 1 daripada 10</div>
-  <div id="questionText">Bersedia untuk bermain?</div>
+  <div id="progress">Bersedia</div>
+  <div id="questionText">Jom bermain!</div>
+  <div id="instruction">
+    Gerakkan penunjuk kuning ke belon jawapan, kemudian tepuk.
+  </div>
 </section>
 
 <div id="arena"></div>
+<canvas id="handCanvas"></canvas>
 <div id="message"></div>
 
 <div id="cameraBox">
@@ -133,36 +273,40 @@ button:disabled{opacity:.5}
   <div id="cameraStatus">Kamera belum aktif</div>
 </div>
 
-<!-- Skrin mula -->
 <div id="startPanel" class="panel">
-  <div class="panelCard">
-    <div style="font-size:65px">👏🎈</div>
+  <div class="card">
+    <div style="font-size:60px">👏🎈</div>
     <h2>Jom Tepuk Belon!</h2>
     <p>
-      Belon jawapan akan jatuh dari atas. Baca soalan,
-      cari belon yang mempunyai jawapan betul dan tepuk
-      tangan di hadapan kamera apabila belon itu berada
-      pada kedudukan tangan kamu.
+      Baca soalan dan cari belon jawapan yang betul.
+      Gerakkan kedua-dua tangan sehingga bulatan kuning
+      berada pada belon. Kemudian rapatkan kedua-dua tangan
+      dengan pantas seperti menepuk.
     </p>
-    <p><b>Pastikan kedua-dua tangan kelihatan dalam kamera.</b></p>
-    <button id="startBtn">🚀 MULA BERMAIN</button>
-    <p id="error" style="color:#c22"></p>
+    <p>
+      <b>Bulatan kuning ialah sasaran tepukan.</b>
+      Pastikan kedua-dua tangan kelihatan di dalam kamera.
+    </p>
+    <button id="startBtn" class="btn">🚀 MULA BERMAIN</button>
+    <p id="cameraError"></p>
   </div>
 </div>
 
-<!-- Skrin tamat -->
 <div id="resultPanel" class="panel hidden">
-  <div class="panelCard">
-    <div style="font-size:60px">🏆</div>
-    <h2>Syabas! Kuiz Selesai!</h2>
-    <div style="font-size:42px;font-weight:900;color:#5533bb" id="finalScore">0/10</div>
+  <div class="card">
+    <div style="font-size:55px">🏆</div>
+    <h2>Kuiz Selesai!</h2>
+    <div id="resultScore">0/10</div>
     <p id="resultMessage"></p>
     <div id="review"></div>
-    <button id="restartBtn">🔄 MAIN SEMULA</button>
+    <button id="restartBtn" class="btn">🔄 MAIN SEMULA</button>
   </div>
 </div>
 
 <script>
+// ========================================
+// 1. SOALAN KATA KERJA TAHUN 1
+// ========================================
 const questions = [
   {q:"Ali sedang _____ bola.",a:["Menendang","Tidur","Memasak"],c:0},
   {q:"Ibu _____ nasi di dapur.",a:["Berlari","Memasak","Menyanyi"],c:1},
@@ -172,140 +316,391 @@ const questions = [
   {q:"Kucing itu _____ di atas tikar.",a:["Menulis","Menyapu","Tidur"],c:2},
   {q:"Murid-murid _____ di padang.",a:["Berlari","Memasak","Membaca"],c:0},
   {q:"Kakak _____ gambar bunga.",a:["Minum","Melukis","Tidur"],c:1},
-  {q:"Abu _____ tangan.",a:["Mencuci","Menyanyi","Menendang"],c:0},
+  {q:"Abu _____ tangan sebelum makan.",a:["Mencuci","Menyanyi","Menendang"],c:0},
   {q:"Burung _____ di udara.",a:["Memasak","Menulis","Terbang"],c:2}
 ];
 
-const colors=["red","blue","green","purple","orange"];
-
+// ========================================
+// 2. PEMBOLEH UBAH
+// ========================================
 const video=document.getElementById("video");
+const canvas=document.getElementById("handCanvas");
+const ctx=canvas.getContext("2d");
 const arena=document.getElementById("arena");
-const questionText=document.getElementById("questionText");
-const progress=document.getElementById("progress");
-const scoreEl=document.getElementById("score");
-const statusEl=document.getElementById("cameraStatus");
-const messageEl=document.getElementById("message");
 
-let handsModel=null, camera=null;
-let cameraReady=false, playing=false, locked=false;
-let index=0, score=0, answers=[];
+let handsModel=null;
+let camera=null;
+let cameraReady=false;
+let playing=false;
+let locked=false;
+let questionIndex=0;
+let score=0;
+let answers=[];
 let balloons=[];
-let lastFrame=performance.now();
-let lastClap=0, previousDistance=null, previousHandX=.5, previousHandY=.5;
-let lastHandsTime=0, handsPresent=false;
 let animationId=null;
+let lastAnimationTime=0;
 
-const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+let previousPalmDistance=null;
+let lastClapTime=0;
+let latestTarget=null;
+let handsCount=0;
+let lastHandResultTime=0;
+let messageTimer=null;
+
+const palette=["red","blue","green","purple","orange"];
+
+function resizeCanvas(){
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  canvas.width=Math.round(window.innerWidth*dpr);
+  canvas.height=Math.round(window.innerHeight*dpr);
+  canvas.style.width=window.innerWidth+"px";
+  canvas.style.height=window.innerHeight+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener("resize",resizeCanvas);
+resizeCanvas();
+
+function showMessage(text){
+  const message=document.getElementById("message");
+  message.textContent=text;
+  clearTimeout(messageTimer);
+  messageTimer=setTimeout(()=>message.textContent="",1100);
+}
 
 function clearBalloons(){
   balloons.forEach(b=>b.el.remove());
   balloons=[];
+  latestTarget=null;
 }
 
-function showMessage(text){
-  messageEl.textContent=text;
-  clearTimeout(showMessage.timer);
-  showMessage.timer=setTimeout(()=>messageEl.textContent="",1200);
-}
-
-function makeBalloons(){
+// ========================================
+// 3. CIPTA BELON
+// ========================================
+function createBalloons(){
   clearBalloons();
-  const q=questions[index];
+
+  const q=questions[questionIndex];
   const lanes=[18,50,82];
 
-  // Pilihan jawapan disusun semula pada setiap soalan.
+  // Susunan pilihan diacak, tetapi indeks jawapan dikekalkan.
   const order=[0,1,2].sort(()=>Math.random()-.5);
 
-  order.forEach((optionIndex,position)=>{
+  order.forEach((optionIndex,slot)=>{
     const el=document.createElement("div");
-    el.className="balloon "+colors[Math.floor(Math.random()*colors.length)];
-    el.style.left=lanes[position]+"%";
-    el.style.top="-200px";
+    el.className="balloon "+palette[Math.floor(Math.random()*palette.length)];
 
     const span=document.createElement("span");
     span.textContent=q.a[optionIndex];
     el.appendChild(span);
+
+    const laneX=lanes[slot]/100*window.innerWidth;
+    el.style.left=lanes[slot]+"%";
     arena.appendChild(el);
 
-    const balloon={
-      el,
-      optionIndex,
-      x:lanes[position]/100*window.innerWidth,
-      y:-200,
-      speed:85+Math.random()*30,
+    const b={
+      el:el,
+      optionIndex:optionIndex,
+      x:laneX,
+      y:-180-Math.random()*100,
+      speed:65+Math.random()*25,
       active:true
     };
 
-    balloons.push(balloon);
+    balloons.push(b);
 
-    // Klik/tap tetikus disediakan untuk ujian dan akses alternatif.
-    el.addEventListener("click",()=>chooseBalloon(balloon));
+    // Klik hanya untuk ujian alternatif.
+    // Tiada pemilihan berdasarkan kedudukan rawak.
+    el.addEventListener("click",()=>{
+      if(playing&&!locked) selectBalloon(b);
+    });
   });
 }
 
+// ========================================
+// 4. PAPAR SOALAN
+// ========================================
 function renderQuestion(){
   locked=false;
-  questionText.textContent=questions[index].q;
-  progress.textContent=`Soalan ${index+1} daripada ${questions.length}`;
-  scoreEl.textContent=score;
-  makeBalloons();
+  document.getElementById("progress").textContent=
+    `Soalan ${questionIndex+1} daripada ${questions.length}`;
+  document.getElementById("questionText").textContent=
+    questions[questionIndex].q;
+  document.getElementById("score").textContent=score;
+
+  document.getElementById("instruction").textContent=
+    "Halakan bulatan kuning ke belon, kemudian tepuk dengan pantas.";
+
+  createBalloons();
 }
 
-function chooseBalloon(balloon){
-  if(!playing || locked || !balloon.active) return;
+// ========================================
+// 5. PILIH BELON HANYA JIKA SASARAN TEPAT
+// ========================================
+function selectBalloon(balloon){
+  if(!playing||locked||!balloon||!balloon.active)return;
 
   locked=true;
   balloon.active=false;
 
-  const q=questions[index];
-  const correct=balloon.optionIndex===q.c;
+  const q=questions[questionIndex];
+  const isCorrect=balloon.optionIndex===q.c;
 
   answers.push({
     question:q.q,
     selected:q.a[balloon.optionIndex],
     correctAnswer:q.a[q.c],
-    correct
+    correct:isCorrect
   });
 
-  if(correct){
+  if(isCorrect){
     score++;
-    scoreEl.textContent=score;
-    showMessage("🎉 BETUL! +1");
+    document.getElementById("score").textContent=score;
+    balloon.el.classList.add("hit");
+    showMessage("🎉 BETUL! +1 MARKAH");
   }else{
-    showMessage("💡 Cuba lagi! Jawapan: "+q.a[q.c]);
+    showMessage("💡 Jawapan betul: "+q.a[q.c]);
   }
 
-  // Hentikan belon selepas satu jawapan dipilih.
   balloons.forEach(b=>{
     b.active=false;
     b.el.style.opacity=".45";
   });
 
   balloon.el.style.opacity="1";
-  balloon.el.style.transform="translateX(-50%) scale(1.12)";
-  balloon.el.style.outline=correct?"5px solid #16a34a":"5px solid #dc2626";
+  balloon.el.style.outline=isCorrect
+    ?"5px solid #16a34a"
+    :"5px solid #dc2626";
 
+  // Tiada sasaran lain dipilih selepas tepukan yang sama.
   setTimeout(()=>{
     if(!playing)return;
-    index++;
-    if(index>=questions.length){
+
+    questionIndex++;
+
+    if(questionIndex>=questions.length){
       finishGame();
     }else{
       renderQuestion();
     }
-  },correct?1000:1700);
+  },isCorrect?1000:1500);
 }
 
+// ========================================
+// 6. SEMAK SASARAN DENGAN KOORDINAT SKRIN
+// ========================================
+function balloonAtPoint(x,y){
+  // Semak kotak belon sebenar pada skrin.
+  // Jika penunjuk di luar semua belon, pulangkan null.
+  for(const b of balloons){
+    if(!b.active)continue;
+
+    const r=b.el.getBoundingClientRect();
+
+    if(
+      x>=r.left && x<=r.right &&
+      y>=r.top && y<=r.bottom
+    ){
+      return b;
+    }
+  }
+  return null;
+}
+
+// ========================================
+// 7. LUKIS TANGAN DAN PENUNJUK KUNING
+// ========================================
+const connections=[
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [5,9],[9,10],[10,11],[11,12],
+  [9,13],[13,14],[14,15],[15,16],
+  [13,17],[17,18],[18,19],[19,20],[0,17]
+];
+
+function screenPoint(landmark){
+  // Selaraskan koordinat dengan paparan kamera seperti cermin.
+  return {
+    x:(1-landmark.x)*window.innerWidth,
+    y:landmark.y*window.innerHeight
+  };
+}
+
+function drawHand(landmarks){
+  ctx.lineWidth=4;
+  ctx.strokeStyle="#00e5ff";
+
+  connections.forEach(([a,b])=>{
+    const p1=screenPoint(landmarks[a]);
+    const p2=screenPoint(landmarks[b]);
+    ctx.beginPath();
+    ctx.moveTo(p1.x,p1.y);
+    ctx.lineTo(p2.x,p2.y);
+    ctx.stroke();
+  });
+
+  landmarks.forEach((landmark,i)=>{
+    const p=screenPoint(landmark);
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,i===8?8:4,0,Math.PI*2);
+    ctx.fillStyle=i===8?"#ffe600":"#ffffff";
+    ctx.fill();
+    ctx.strokeStyle="#172554";
+    ctx.lineWidth=1.5;
+    ctx.stroke();
+  });
+}
+
+function drawTarget(x,y,onBalloon){
+  // Sasaran berwarna kuning; bertukar hijau apabila di atas belon.
+  ctx.beginPath();
+  ctx.arc(x,y,25,0,Math.PI*2);
+  ctx.fillStyle=onBalloon?"#16a34a99":"#facc1599";
+  ctx.fill();
+  ctx.lineWidth=4;
+  ctx.strokeStyle=onBalloon?"#bbf7d0":"#ffffff";
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(x,y,6,0,Math.PI*2);
+  ctx.fillStyle="#ffffff";
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(x-35,y);
+  ctx.lineTo(x-13,y);
+  ctx.moveTo(x+13,y);
+  ctx.lineTo(x+35,y);
+  ctx.moveTo(x,y-35);
+  ctx.lineTo(x,y-13);
+  ctx.moveTo(x,y+13);
+  ctx.lineTo(x,y+35);
+  ctx.strokeStyle="#172554";
+  ctx.lineWidth=3;
+  ctx.stroke();
+}
+
+// ========================================
+// 8. KESAN KEDUA-DUA TANGAN
+// ========================================
+function onHandResults(data){
+  ctx.clearRect(0,0,window.innerWidth,window.innerHeight);
+
+  const hands=data.multiHandLandmarks||[];
+  handsCount=hands.length;
+  lastHandResultTime=performance.now();
+
+  // Lukis kedua-dua tangan jika dikesan.
+  hands.forEach(drawHand);
+
+  if(hands.length<2){
+    previousPalmDistance=null;
+    latestTarget=null;
+    document.getElementById("cameraStatus").textContent=
+      hands.length===1
+      ?"1 tangan — tunjukkan 2 tangan"
+      :"Mencari kedua-dua tangan...";
+    return;
+  }
+
+  const palm1=hands[0][9];
+  const palm2=hands[1][9];
+
+  const p1=screenPoint(palm1);
+  const p2=screenPoint(palm2);
+
+  // Sasaran ialah titik tengah antara tapak tangan.
+  const x=(p1.x+p2.x)/2;
+  const y=(p1.y+p2.y)/2;
+
+  const dx=palm1.x-palm2.x;
+  const dy=palm1.y-palm2.y;
+  const distance=Math.sqrt(dx*dx+dy*dy);
+
+  const now=performance.now();
+
+  // Sasaran mesti berada dalam kotak belon yang sebenar.
+  const target=playing&&!locked?balloonAtPoint(x,y):null;
+  latestTarget=target;
+
+  if(target){
+    target.el.classList.add("targeted");
+    document.getElementById("cameraStatus").textContent=
+      "Sasaran: "+target.el.innerText;
+  }else{
+    document.getElementById("cameraStatus").textContent=
+      "Gerakkan sasaran ke belon";
+  }
+
+  drawTarget(x,y,!!target);
+
+  // Kesan gerakan tangan menghampiri satu sama lain dengan pantas.
+  // Memerlukan perubahan jarak dan jarak akhir yang kecil.
+  const approaching=
+    previousPalmDistance!==null &&
+    previousPalmDistance-distance>0.035;
+
+  const closeEnough=distance<0.22;
+  const cooldown=now-lastClapTime>1000;
+
+  if(
+    playing&&!locked&&
+    approaching&&closeEnough&&cooldown
+  ){
+    lastClapTime=now;
+
+    // Semak sasaran semula ketika tepukan dikesan.
+    const actualTarget=balloonAtPoint(x,y);
+
+    if(actualTarget){
+      selectBalloon(actualTarget);
+    }else{
+      showMessage("🎯 Halakan bulatan ke atas belon!");
+    }
+  }
+
+  previousPalmDistance=distance;
+}
+
+// ========================================
+// 9. ANIMASI BELON JATUH
+// ========================================
+function animate(now){
+  const dt=Math.min((now-lastAnimationTime)/1000,0.05);
+  lastAnimationTime=now;
+
+  if(playing&&!locked){
+    balloons.forEach(b=>{
+      if(!b.active)return;
+
+      b.y+=b.speed*dt;
+      b.el.style.top=b.y+"px";
+
+      // Belon yang terlepas muncul semula di lorong yang sama.
+      // Belon ini tidak dianggap sebagai jawapan terpilih.
+      if(b.y>window.innerHeight+100){
+        b.y=-180-Math.random()*60;
+      }
+    });
+  }
+
+  animationId=requestAnimationFrame(animate);
+}
+
+// ========================================
+// 10. AKHIR PERMAINAN DAN PEMBETULAN
+// ========================================
 function finishGame(){
   playing=false;
   locked=true;
   clearBalloons();
-  document.getElementById("finalScore").textContent=`${score}/10`;
 
-  document.getElementById("resultMessage").textContent =
+  document.getElementById("resultScore").textContent=
+    `${score}/${questions.length}`;
+
+  document.getElementById("resultMessage").textContent=
     score>=8?"Hebat! Kamu sangat mahir mengenal kata kerja!":
     score>=5?"Bagus! Teruskan berlatih kata kerja.":
-    "Jangan putus asa. Belajar lagi dan cuba semula!";
+    "Jangan putus asa. Cuba belajar dan bermain lagi!";
 
   const review=document.getElementById("review");
   review.innerHTML="<h3>Semakan jawapan</h3>";
@@ -318,14 +713,14 @@ function finishGame(){
     q.textContent=`${i+1}. ${a.question}`;
 
     const selected=document.createElement("div");
+    selected.className=a.correct?"right":"wrong";
     selected.textContent="Jawapan kamu: "+a.selected;
-    selected.className=a.correct?"correctText":"wrongText";
 
     item.append(q,selected);
 
     if(!a.correct){
       const correction=document.createElement("div");
-      correction.className="correctText";
+      correction.className="right";
       correction.textContent="Pembetulan: "+a.correctAnswer;
       item.appendChild(correction);
     }
@@ -334,116 +729,29 @@ function finishGame(){
   });
 
   document.getElementById("resultPanel").classList.remove("hidden");
+  ctx.clearRect(0,0,window.innerWidth,window.innerHeight);
 }
 
+// ========================================
+// 11. MULAKAN / MAIN SEMULA
+// ========================================
 function resetGame(){
-  index=0;
+  questionIndex=0;
   score=0;
   answers=[];
   playing=true;
   locked=false;
+  previousPalmDistance=null;
+  lastClapTime=0;
+
+  document.getElementById("score").textContent="0";
   document.getElementById("resultPanel").classList.add("hidden");
+
   renderQuestion();
-}
 
-// Animasi belon
-function animate(now){
-  const dt=Math.min((now-lastFrame)/1000,.05);
-  lastFrame=now;
-
-  if(playing && !locked){
-    balloons.forEach(b=>{
-      if(!b.active)return;
-      b.y+=b.speed*dt;
-      b.el.style.top=b.y+"px";
-
-      // Jika belon terlepas ke bawah, ia muncul semula dari atas.
-      if(b.y>window.innerHeight+100){
-        b.y=-180;
-        b.speed=85+Math.random()*30;
-      }
-    });
-  }
-
-  animationId=requestAnimationFrame(animate);
-}
-
-// Anggaran lokasi tepukan daripada titik tengah kedua-dua tapak tangan.
-function onHandResults(data){
-  const hands=data.multiHandLandmarks||[];
-
-  if(hands.length<2){
-    handsPresent=false;
-    previousDistance=null;
-    statusEl.textContent=hands.length===1
-      ?"Tunjukkan kedua-dua tangan"
-      :"Cari tangan...";
-    return;
-  }
-
-  handsPresent=true;
-  lastHandsTime=performance.now();
-
-  const p1=hands[0][9];
-  const p2=hands[1][9];
-
-  const dx=p1.x-p2.x;
-  const dy=p1.y-p2.y;
-  const distance=Math.sqrt(dx*dx+dy*dy);
-
-  // Titik tengah antara kedua-dua tangan.
-  const midX=(p1.x+p2.x)/2;
-  const midY=(p1.y+p2.y)/2;
-
-  // Kamera dipaparkan secara cermin.
-  const screenX=(1-midX)*window.innerWidth;
-  const screenY=midY*window.innerHeight;
-
-  // Gerakan tangan yang menghampiri satu sama lain dengan pantas.
-  const closing=previousDistance!==null &&
-                previousDistance-distance>.045;
-  const closeEnough=distance<.19;
-  const now=performance.now();
-
-  statusEl.textContent=closeEnough?"Tangan rapat!":"Kedua-dua tangan dikesan";
-
-  if(playing && !locked && closing && closeEnough &&
-     now-lastClap>900){
-    lastClap=now;
-    tryHitBalloon(screenX,screenY);
-  }
-
-  previousDistance=distance;
-  previousHandX=screenX;
-  previousHandY=screenY;
-}
-
-function tryHitBalloon(x,y){
-  // Pilih belon yang benar-benar berada dekat dengan lokasi tepukan.
-  let nearest=null;
-  let best=Infinity;
-
-  balloons.forEach(b=>{
-    if(!b.active)return;
-
-    const rect=b.el.getBoundingClientRect();
-    const cx=rect.left+rect.width/2;
-    const cy=rect.top+rect.height/2;
-
-    const dx=(x-cx)/(rect.width*.65);
-    const dy=(y-cy)/(rect.height*.65);
-    const d=dx*dx+dy*dy;
-
-    if(d<1 && d<best){
-      best=d;
-      nearest=b;
-    }
-  });
-
-  if(nearest){
-    chooseBalloon(nearest);
-  }else{
-    showMessage("👏 Tepuk pada belon!");
+  if(!animationId){
+    lastAnimationTime=performance.now();
+    animate(lastAnimationTime);
   }
 }
 
@@ -451,11 +759,11 @@ async function startCamera(){
   if(cameraReady)return;
 
   if(!navigator.mediaDevices?.getUserMedia){
-    throw new Error("Buka game melalui pautan HTTPS GitHub Pages.");
+    throw new Error("Buka game melalui HTTPS GitHub Pages.");
   }
 
-  if(typeof Hands==="undefined" || typeof Camera==="undefined"){
-    throw new Error("MediaPipe gagal dimuat. Semak internet dan cuba lagi.");
+  if(typeof Hands==="undefined"||typeof Camera==="undefined"){
+    throw new Error("MediaPipe gagal dimuat. Semak sambungan internet.");
   }
 
   handsModel=new Hands({
@@ -466,15 +774,15 @@ async function startCamera(){
   handsModel.setOptions({
     maxNumHands:2,
     modelComplexity:1,
-    minDetectionConfidence:.65,
-    minTrackingConfidence:.6
+    minDetectionConfidence:0.65,
+    minTrackingConfidence:0.6
   });
 
   handsModel.onResults(onHandResults);
 
   camera=new Camera(video,{
     onFrame:async()=>{
-      if(handsModel && video.readyState>=2){
+      if(handsModel&&video.readyState>=2){
         await handsModel.send({image:video});
       }
     },
@@ -484,7 +792,7 @@ async function startCamera(){
 
   await camera.start();
   cameraReady=true;
-  statusEl.textContent="Kamera aktif";
+  document.getElementById("cameraStatus").textContent="Kamera aktif";
 }
 
 document.getElementById("startBtn").addEventListener("click",async()=>{
@@ -496,14 +804,9 @@ document.getElementById("startBtn").addEventListener("click",async()=>{
     await startCamera();
     document.getElementById("startPanel").classList.add("hidden");
     resetGame();
-
-    if(!animationId){
-      lastFrame=performance.now();
-      animate(lastFrame);
-    }
   }catch(error){
-    document.getElementById("error").textContent=
-      error.message||"Tidak dapat membuka kamera.";
+    document.getElementById("cameraError").textContent=
+      error.message||"Kamera tidak dapat diaktifkan.";
     btn.disabled=false;
     btn.textContent="CUBA LAGI";
   }
@@ -511,10 +814,6 @@ document.getElementById("startBtn").addEventListener("click",async()=>{
 
 document.getElementById("restartBtn").addEventListener("click",()=>{
   resetGame();
-});
-
-window.addEventListener("resize",()=>{
-  // Kedudukan belon disesuaikan oleh CSS apabila skrin berubah.
 });
 </script>
 </body>
