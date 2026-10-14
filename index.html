@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kotak Pintar MediaPipe</title>
+
+<style>
+:root {
+  --blue: #3157b7;
+  --green: #168454;
+  --red: #d94b59;
+}
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  color: #24345b;
+  background: linear-gradient(135deg, #eaf2ff, #f9eaff);
+}
+header { padding: 12px 8px 4px; }
+h1 { color: var(--blue); margin: 5px; font-size: clamp(25px, 4vw, 38px); }
+p { line-height: 1.5; }
+
+button {
+  border: 0;
+  border-radius: 12px;
+  padding: 11px 16px;
+  margin: 5px;
+  background: var(--blue);
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:disabled { opacity: .55; }
+.green { background: var(--green); }
+.grey { background: #596780; }
+.red { background: var(--red); }
+
+#status { min-height: 24px; margin: 9px; font-weight: bold; }
+#controls { padding: 0 8px; }
+
+#stage {
+  position: relative;
+  width: min(96vw, 1100px);
+  margin: 10px auto;
+  overflow: hidden;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 6px 24px #24345b25;
+}
+#game { display: block; width: 100%; height: auto; }
+
+#cameraBox {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: clamp(105px, 22%, 220px);
+  aspect-ratio: 4 / 3;
+  z-index: 3;
+  overflow: hidden;
+  background: #172033;
+  border: 3px solid white;
+  border-radius: 13px;
+  box-shadow: 0 4px 15px #0005;
+}
+#camera {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+#cameraLabel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 4px;
+  color: white;
+  background: #0009;
+  font-size: 11px;
+}
+
+#teacherLoginPanel, #editor {
+  display: none;
+  max-width: 850px;
+  margin: 18px auto;
+  padding: 18px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 18px #24345b18;
+  text-align: left;
+}
+#teacherLoginPanel.open, #editor.open { display: block; }
+#teacherLoginPanel { max-width: 420px; }
+#teacherLoginPanel input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 2px solid #ccd6ef;
+  border-radius: 10px;
+  font-size: 16px;
+}
+#questionData {
+  width: 100%;
+  min-height: 190px;
+  padding: 12px;
+  border: 2px solid #ccd6ef;
+  border-radius: 10px;
+  font: 15px/1.6 monospace;
+}
+.note { font-size: 13px; color: #596780; }
+#help { max-width: 760px; margin: 18px auto 28px; padding: 0 14px; }
+
+body.fullscreen header,
+body.fullscreen #help,
+body.fullscreen #teacherLoginPanel,
+body.fullscreen #editor {
+  display: none !important;
+}
+body.fullscreen #controls { padding-top: 4px; }
+body.fullscreen #status { margin: 4px; min-height: 20px; }
+body.fullscreen #stage {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+body.fullscreen #game { width: 100%; }
+
+@media(max-width: 550px) {
+  button { padding: 10px 11px; font-size: 13px; }
+  #cameraBox { top: 6px; right: 6px; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>🎮 KOTAK PINTAR</h1>
+  <p>Bawa kotak ke jawapan yang betul menggunakan tangan!</p>
+</header>
+
+<div id="controls">
+  <button id="start">📷 Mula Kamera</button>
+  <button id="reset" class="grey">🔄 Mula Semula</button>
+  <button id="sound" class="green">🔊 Bunyi: ON</button>
+  <button id="fullscreen" class="grey">⛶ Skrin Penuh</button>
+  <button id="teacherLogin" class="grey">🔐 Mod Guru</button>
+</div>
+
+<div id="status">Tekan Mula Kamera untuk bermain.</div>
+
+<div id="stage">
+  <canvas id="game" width="960" height="540"></canvas>
+  <div id="cameraBox">
+    <video id="camera" autoplay playsinline muted></video>
+    <div id="cameraLabel">📷 Kamera anda</div>
+  </div>
+</div>
+
+<!-- LOG MASUK GURU -->
+<section id="teacherLoginPanel">
+  <h2>🔐 Log Masuk Guru</h2>
+  <p>Masukkan kata laluan untuk mengubah soalan.</p>
+  <input id="teacherPassword" type="password"
+         placeholder="Kata laluan guru"
+         autocomplete="current-password">
+  <button id="unlockTeacher" class="green">Buka Editor</button>
+  <button id="closeLogin" class="grey">Batal</button>
+  <p id="loginMessage" role="status"></p>
+</section>
+
+<!-- EDITOR HANYA DIPAPARKAN SELEPAS LOG MASUK -->
+<section id="editor">
+  <h2>✏️ Editor Soalan Guru</h2>
+  <p>Masukkan satu soalan bagi setiap baris.</p>
+
+  <textarea id="questionData" spellcheck="false">Pilih perkataan BOLA. | MEJA | BOLA | 2
+Pilih haiwan. | KUCING | BUKU | 1
+Pilih buah-buahan. | KERUSI | EPAL | 2
+Pilih alat tulis. | PENSEL | IKAN | 1</textarea>
+
+  <p class="note">
+    Format: SOALAN | PILIHAN 1 | PILIHAN 2 | JAWAPAN BETUL.
+    Gunakan nombor 1 atau 2 untuk jawapan yang betul.
+  </p>
+
+  <button id="apply" class="green">Simpan Soalan</button>
+  <button id="defaultQuestions" class="grey">Soalan Asal</button>
+  <button id="closeEditor" class="red">Tutup Mod Guru</button>
+  <p id="editorStatus" class="note" role="status"></p>
+</section>
+
+<div id="help">
+  <b>Cara bermain</b>
+  <p>1. Tekan Mula Kamera dan benarkan akses kamera.</p>
+  <p>2. Cubit ibu jari dan jari telunjuk berhampiran kotak biru.</p>
+  <p>3. Gerakkan tangan sambil mencubit.</p>
+  <p>4. Lepaskan cubitan apabila seluruh kotak berada dalam ruang jawapan.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
+        crossorigin="anonymous"></script>
+
+<script>
+"use strict";
+
+// Tukar kata laluan contoh ini sebelum digunakan.
+// PERHATIAN: kata laluan dalam JavaScript awam boleh diperiksa.
+const TEACHER_PASSWORD = "GURU123";
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const video = document.getElementById("camera");
+const statusBox = document.getElementById("status");
+const startButton = document.getElementById("start");
+const loginPanel = document.getElementById("teacherLoginPanel");
+const editor = document.getElementById("editor");
+const passwordInput = document.getElementById("teacherPassword");
+const loginMessage = document.getElementById("loginMessage");
+const questionData = document.getElementById("questionData");
+const editorStatus = document.getElementById("editorStatus");
+
+const defaultText = questionData.value;
+
+let questions = [];
+let questionIndex = 0;
+let score = 0;
+let finished = false;
+let handSeen = false;
+let pinching = false;
+let dragging = false;
+let cameraReady = false;
+let cameraObject = null;
+let soundOn = true;
+let audioContext = null;
+let particles = [];
+let feedback = "";
+let feedbackUntil = 0;
+let lastFrameTime = 0;
+let teacherMode = false;
+
+const box = {
+  x: 448, y: 205, size: 64,
+  targetX: 448, targetY: 205
+};
+
+const zones = [
+  { x: 145, y: 380, w: 280, h: 105 },
+  { x: 535, y: 380, w: 280, h: 105 }
+];
+
+let cursorX = 480;
+let cursorY = 250;
+
+function parseQuestions(text) {
+  const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  const parsed = [];
+
+  for (const line of lines) {
+    const parts = line.split("|").map(s => s.trim());
+
+    if (parts.length !== 4 ||
+        !parts[0] || !parts[1] || !parts[2] ||
+        !["1", "2"].includes(parts[3])) {
+      throw new Error(
+        "Format salah. Gunakan SOALAN | PILIHAN 1 | PILIHAN 2 | 1 atau 2."
+      );
+    }
+
+    parsed.push({
+      q: parts[0],
+      options: [parts[1], parts[2]],
+      correct: Number(parts[3]) - 1
+    });
+  }
+
+  if (!parsed.length) {
+    throw new Error("Masukkan sekurang-kurangnya satu soalan.");
+  }
+
+  return parsed;
+}
+
+function applyQuestions() {
+  try {
+    const newQuestions = parseQuestions(questionData.value);
+    questions = newQuestions;
+    resetGame();
+    editorStatus.textContent =
+      "Berjaya! " + questions.length + " soalan disimpan untuk sesi ini.";
+    editorStatus.style.color = "#168454";
+
+    // Tutup editor selepas soalan berjaya disimpan.
+    editor.classList.remove("open");
+    teacherMode = false;
+    statusBox.textContent = "Soalan dikemas kini. Sedia untuk bermain.";
+  } catch (error) {
+    editorStatus.textContent = error.message;
+    editorStatus.style.color = "#c52d42";
+  }
+}
+
+function playTone(type) {
+  if (!soundOn) return;
+
+  try {
+    audioContext ||= new (
+      window.AudioContext || window.webkitAudioContext
+    )();
+
+    if (audioContext.state === "suspended") audioContext.resume();
+
+    const notes = type === "correct" ? [660, 880, 1100]
+      : type === "wrong" ? [240, 180]
+      : type === "pick" ? [520]
+      : [520, 680];
+
+    const now = audioContext.currentTime;
+
+    notes.forEach((freq, i) => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, now + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(
+        0.14, now + i * 0.12 + 0.025
+      );
+      gain.gain.exponentialRampToValueAtTime(
+        0.0001, now + i * 0.12 + 0.17
+      );
+
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.start(now + i * 0.12);
+      osc.stop(now + i * 0.12 + 0.19);
+    });
+  } catch (error) {
+    console.warn("Audio tidak tersedia.", error);
+  }
+}
+
+function say(text, duration = 2000, tone = null) {
+  feedback = text;
+  feedbackUntil = performance.now() + duration;
+  if (tone) playTone(tone);
+}
+
+function resetGame() {
+  questionIndex = 0;
+  score = 0;
+  finished = false;
+  dragging = false;
+  pinching = false;
+  particles = [];
+
+  box.x = box.targetX = 448;
+  box.y = box.targetY = 205;
+
+  say("Cubit kotak biru untuk mengambilnya!", 2400);
+  draw();
+}
+
+function spawnParticles(x, y, color) {
+  for (let i = 0; i < 28; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 7,
+      vy: (Math.random() - 0.8) * 7,
+      life: 1,
+      color
+    });
+  }
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 5 * p.life, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const bg = ctx.createLinearGradient(0, 0, 960, 540);
+  bg.addColorStop(0, "#f5f8ff");
+  bg.addColorStop(1, "#dce8ff");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, 960, 540);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#3157b7";
+  ctx.font = "bold 25px Arial";
+  ctx.fillText("KOTAK PINTAR", 25, 38);
+
+  ctx.textAlign = "right";
+  ctx.fillText("⭐ Markah: " + score, 930, 38);
+
+  if (finished) {
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.roundRect(160, 125, 640, 280, 24);
+    ctx.fill();
+
+    ctx.strokeStyle = "#78cba0";
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#168454";
+    ctx.font = "bold 44px Arial";
+    ctx.fillText("TAHNIAH! 🎉", 480, 215);
+
+    ctx.fillStyle = "#24345b";
+    ctx.font = "bold 30px Arial";
+    ctx.fillText("Markah: " + score + "/" + questions.length, 480, 275);
+
+    ctx.font = "22px Arial";
+    ctx.fillText("Tekan Mula Semula untuk bermain lagi.", 480, 330);
+    drawParticles();
+    return;
+  }
+
+  const q = questions[questionIndex];
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#24345b";
+  ctx.font = "bold 27px Arial";
+  ctx.fillText(
+    "Soalan " + (questionIndex + 1) + " / " + questions.length,
+    480, 82
+  );
+
+  ctx.font = "bold 30px Arial";
+  ctx.fillText(q.q, 480, 135);
+
+  zones.forEach((z, i) => {
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = i === 0 ? "#8ca7ed" : "#83cbb1";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.roundRect(z.x, z.y, z.w, z.h, 18);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#3157b7";
+    ctx.font = "bold 27px Arial";
+    ctx.fillText(q.options[i], z.x + z.w / 2, z.y + 62);
+  });
+
+  ctx.save();
+  ctx.shadowColor = dragging ? "#ffad42aa" : "#3157b755";
+  ctx.shadowBlur = dragging ? 24 : 12;
+  ctx.fillStyle = dragging ? "#ffad42" : "#38a8e8";
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.roundRect(box.x, box.y, box.size, box.size, 14);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 29px Arial";
+  ctx.fillText("K", box.x + box.size / 2, box.y + 42);
+
+  if (handSeen) {
+    ctx.beginPath();
+    ctx.arc(cursorX, cursorY, 8, 0, Math.PI * 2);
+    ctx.fillStyle = pinching ? "#ff8c27" : "#168454";
+    ctx.fill();
+  }
+
+  if (performance.now() < feedbackUntil) {
+    ctx.fillStyle = "#ffffffed";
+    ctx.beginPath();
+    ctx.roundRect(180, 285, 600, 52, 12);
+    ctx.fill();
+
+    ctx.fillStyle = "#24345b";
+    ctx.font = "bold 19px Arial";
+    ctx.fillText(feedback, 480, 318);
+  }
+
+  drawParticles();
+}
+
+function releaseBox() {
+  dragging = false;
+  pinching = false;
+
+  let dropped = -1;
+
+  zones.forEach((z, i) => {
+    const fullyInside =
+      box.x >= z.x &&
+      box.y >= z.y &&
+      box.x + box.size <= z.x + z.w &&
+      box.y + box.size <= z.y + z.h;
+
+    if (fullyInside) dropped = i;
+  });
+
+  if (dropped === -1) {
+    say("Bawa seluruh kotak ke dalam ruang jawapan.", 2000, "wrong");
+    box.targetX = box.x = 448;
+    box.targetY = box.y = 205;
+    return;
+  }
+
+  if (dropped === questions[questionIndex].correct) {
+    score++;
+    spawnParticles(box.x + box.size / 2, box.y + box.size / 2, "#21b879");
+    questionIndex++;
+
+    if (questionIndex >= questions.length) {
+      finished = true;
+      say("Tahniah! Semua soalan selesai!", 4000, "correct");
+    } else {
+      say("Betul! Bagus! 🌟", 1800, "correct");
+    }
+  } else {
+    say("Belum tepat. Cuba lagi!", 2000, "wrong");
+  }
+
+  box.targetX = box.x = 448;
+  box.targetY = box.y = 205;
+}
+
+function onResults(results) {
+  const landmarks = results.multiHandLandmarks;
+  handSeen = !!(landmarks && landmarks.length);
+
+  if (!handSeen) {
+    pinching = false;
+    dragging = false;
+    statusBox.textContent = "Tangan belum dikesan. Tunjukkan tangan.";
+    return;
+  }
+
+  const lm = landmarks[0];
+  const thumb = lm[4];
+  const index = lm[8];
+  const distance = Math.hypot(
+    thumb.x - index.x,
+    thumb.y - index.y
+  );
+
+  pinching = distance < 0.065;
+
+  cursorX = (1 - (thumb.x + index.x) / 2) * canvas.width;
+  cursorY = ((thumb.y + index.y) / 2) * canvas.height;
+
+  if (!finished) {
+    if (pinching && !dragging) {
+      const nearBox =
+        cursorX >= box.x - 20 &&
+        cursorX <= box.x + box.size + 20 &&
+        cursorY >= box.y - 20 &&
+        cursorY <= box.y + box.size + 20;
+
+      if (nearBox) {
+        dragging = true;
+        playTone("pick");
+      }
+    }
+
+    if (pinching && dragging) {
+      box.targetX = Math.max(
+        0, Math.min(canvas.width - box.size, cursorX - box.size / 2)
+      );
+      box.targetY = Math.max(
+        150, Math.min(canvas.height - box.size, cursorY - box.size / 2)
+      );
+    }
+
+    if (!pinching && dragging) releaseBox();
+  }
+
+  statusBox.textContent = dragging
+    ? "Kotak dipegang! Gerakkan tangan ke jawapan."
+    : "Tangan dikesan. Cubit kotak biru untuk memegang.";
+}
+
+function animate(time) {
+  const dt = lastFrameTime
+    ? Math.min(2, (time - lastFrameTime) / 16.67)
+    : 1;
+
+  lastFrameTime = time;
+
+  box.x += (box.targetX - box.x) * Math.min(1, 0.38 * dt);
+  box.y += (box.targetY - box.y) * Math.min(1, 0.38 * dt);
+
+  particles = particles.filter(p => p.life > 0.03);
+  particles.forEach(p => {
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 0.12 * dt;
+    p.life -= 0.025 * dt;
+  });
+
+  draw();
+  requestAnimationFrame(animate);
+}
+
+const hands = new Hands({
+  locateFile: file =>
+    "https://cdn.jsdelivr.net/npm/@mediapipe/hands/" + file
+});
+
+hands.setOptions({
+  maxNumHands: 1,
+  modelComplexity: 1,
+  minDetectionConfidence: 0.65,
+  minTrackingConfidence: 0.60
+});
+
+hands.onResults(onResults);
+
+startButton.addEventListener("click", async () => {
+  if (cameraReady) return;
+
+  startButton.disabled = true;
+  statusBox.textContent = "Sedang memulakan kamera...";
+
+  try {
+    audioContext ||= new (
+      window.AudioContext || window.webkitAudioContext
+    )();
+
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    cameraObject = new Camera(video, {
+      onFrame: async () => {
+        if (video.readyState >= 2) {
+          await hands.send({ image: video });
+        }
+      },
+      width: 640,
+      height: 480
+    });
+
+    await cameraObject.start();
+    cameraReady = true;
+    startButton.textContent = "✅ Kamera Aktif";
+    say("Kamera aktif! Cubit kotak biru.", 2400);
+  } catch (error) {
+    console.error(error);
+    statusBox.textContent =
+      "Kamera gagal dibuka. Benarkan akses kamera dan cuba lagi.";
+    startButton.disabled = false;
+  }
+});
+
+document.getElementById("reset").addEventListener("click", resetGame);
+
+document.getElementById("sound").addEventListener("click", event => {
+  soundOn = !soundOn;
+  event.currentTarget.textContent = soundOn
+    ? "🔊 Bunyi: ON"
+    : "🔇 Bunyi: OFF";
+
+  if (soundOn) playTone("correct");
+});
+
+document.getElementById("fullscreen").addEventListener("click", async () => {
+  try {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen();
+    } else {
+      await document.exitFullscreen();
+    }
+  } catch (error) {
+    statusBox.textContent = "Skrin penuh tidak tersedia dalam pelayar ini.";
+  }
+});
+
+document.addEventListener("fullscreenchange", () => {
+  const isFull = !!document.fullscreenElement;
+  document.body.classList.toggle("fullscreen", isFull);
+
+  document.getElementById("fullscreen").textContent = isFull
+    ? "⤢ Keluar Skrin Penuh"
+    : "⛶ Skrin Penuh";
+});
+
+// MOD GURU
+document.getElementById("teacherLogin").addEventListener("click", () => {
+  loginPanel.classList.add("open");
+  passwordInput.focus();
+});
+
+document.getElementById("closeLogin").addEventListener("click", () => {
+  loginPanel.classList.remove("open");
+  passwordInput.value = "";
+  loginMessage.textContent = "";
+});
+
+document.getElementById("unlockTeacher").addEventListener("click", () => {
+  if (passwordInput.value === TEACHER_PASSWORD) {
+    teacherMode = true;
+    loginPanel.classList.remove("open");
+    editor.classList.add("open");
+    passwordInput.value = "";
+    loginMessage.textContent = "";
+    editorStatus.textContent = "Mod Guru dibuka.";
+    editor.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else {
+    loginMessage.textContent = "Kata laluan tidak betul.";
+    loginMessage.style.color = "#c52d42";
+  }
+});
+
+passwordInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    document.getElementById("unlockTeacher").click();
+  }
+});
+
+document.getElementById("apply").addEventListener("click", () => {
+  if (!teacherMode) return;
+  applyQuestions();
+});
+
+document.getElementById("defaultQuestions").addEventListener("click", () => {
+  if (!teacherMode) return;
+  questionData.value = defaultText;
+  applyQuestions();
+});
+
+document.getElementById("closeEditor").addEventListener("click", () => {
+  editor.classList.remove("open");
+  teacherMode = false;
+  statusBox.textContent = "Mod Murid aktif. Selamat bermain!";
+});
+
+// Mulakan dengan soalan asal; editor kekal tersembunyi.
+questions = parseQuestions(defaultText);
+resetGame();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
